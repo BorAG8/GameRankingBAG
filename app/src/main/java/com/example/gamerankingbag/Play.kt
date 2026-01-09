@@ -1,5 +1,6 @@
 package com.example.gamerankingbag
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -22,17 +23,24 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,6 +55,9 @@ import androidx.compose.ui.unit.sp
 import com.example.gamerankingbag.ui.theme.Alternativo
 import com.example.gamerankingbag.ui.theme.Botones
 import com.example.gamerankingbag.ui.theme.GameRankingPersonalTheme
+import com.example.gamerankingbag.utils.AppTopBar
+import com.example.gamerankingbag.utils.drawerItems
+import kotlinx.coroutines.launch
 
 class PlayActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -64,72 +75,144 @@ class PlayActivity : ComponentActivity() {
 @Composable
 fun Play () {
 
+    val scope = rememberCoroutineScope()
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val context = LocalContext.current
 
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(30.dp, 50.dp),
-            verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.Start
-        ) {
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        gesturesEnabled = true,
+        drawerContent = {
+            ModalDrawerSheet {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.googleplay),
+                        contentDescription = "Logo drawer",
+                        modifier = Modifier.size(80.dp),
+                        contentScale = ContentScale.Fit
+                    )
+                }
 
-            // Titulo plataformas
-            Text(
-                text = "Platformas:",
-                fontSize = 30.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = CourgetteFontFamily,
-                color = Alternativo
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-
-            ChipGroup(
-                items = listOf("PS5", "Xbox X/S", "Switch", "PC", "Steam", "GeForce Now")
-            ) { platform ->
-                Toast.makeText(
-                    context,
-                    "Has seleccionado $platform",
-                    Toast.LENGTH_SHORT
-                ).show()
+                drawerItems.forEach { item ->
+                    NavigationDrawerItem(
+                        icon = {
+                            Icon(
+                                imageVector = item.icon,
+                                contentDescription = item.label
+                            )
+                        },
+                        label = { Text(item.label) },
+                        selected = false,
+                        onClick = {
+                            scope.launch { drawerState.close() }
+                        }
+                    )
+                }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Titulo juegos por consola
-            Text(
-                text = "Géneros:",
-                fontSize = 30.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = CourgetteFontFamily,
-                color = Alternativo
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+        }
+    ) {
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            topBar = {
+                AppTopBar(
+                    titulo = "Play",
+                    mostrarMenu = true,
+                    mostrarCorazon = true,
+                    mostrarLupa = true,
+                    mostrarDesplegable = true,
+                    onMenuClick = {
+                        scope.launch {
+                            if (drawerState.isClosed) {
+                                drawerState.open()
+                            } else {
+                                drawerState.close()
+                            }
+                        }
+                    },
+                    onTypesClick = {
+                        val intent =
+                            Intent(context, PlayActivity::class.java)
+                        context.startActivity(intent)
+                    },
+                    onShareClick = { }
+                )
+            }
+        ) { innerPadding ->
+            Surface(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                color = MaterialTheme.colorScheme.background
             ) {
-                items(listaJuegos()) { juego ->
-                    GameCard(
-                        icono = juego.imagen,
-                        texto = juego.genero
-                    ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(30.dp, 50.dp),
+                    verticalArrangement = Arrangement.Top,
+                    horizontalAlignment = Alignment.Start
+                ) {
+
+                    // Titulo plataformas
+                    Text(
+                        text = "Platformas:",
+                        fontSize = 30.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = CourgetteFontFamily,
+                        color = Alternativo
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    ChipGroup(
+                        items = listOf("PS5", "Xbox X/S", "Switch", "PC", "Steam", "GeForce Now")
+                    ) { platform ->
                         Toast.makeText(
                             context,
-                            "El juego ${juego.nombre} del género tipo ${juego.genero}",
+                            "Has seleccionado $platform",
                             Toast.LENGTH_SHORT
                         ).show()
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Titulo juegos por consola
+                    Text(
+                        text = "Géneros:",
+                        fontSize = 30.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = CourgetteFontFamily,
+                        color = Alternativo
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(listaJuegos()) { juego ->
+                            GameCard(
+                                icono = juego.imagen,
+                                texto = juego.genero
+                            ) {
+                                Toast.makeText(
+                                    context,
+                                    "El juego ${juego.nombre} del género tipo ${juego.genero}",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
                     }
                 }
             }
         }
     }
+
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

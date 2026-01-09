@@ -1,5 +1,6 @@
 package com.example.gamerankingbag
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -16,29 +17,39 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.gamerankingbag.ui.theme.Alternativo
 import com.example.gamerankingbag.ui.theme.Botones
 import com.example.gamerankingbag.ui.theme.GameRankingPersonalTheme
+import com.example.gamerankingbag.utils.AppTopBar
+import com.example.gamerankingbag.utils.drawerItems
+import kotlinx.coroutines.launch
 
 class UserActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -56,49 +67,120 @@ class UserActivity : ComponentActivity() {
 @Composable
 fun User () {
 
+    val scope = rememberCoroutineScope()
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val context = LocalContext.current
 
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        gesturesEnabled = true,
+        drawerContent = {
+            ModalDrawerSheet {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.googleplay),
+                        contentDescription = "Logo drawer",
+                        modifier = Modifier.size(80.dp),
+                        contentScale = ContentScale.Fit
+                    )
+                }
+
+                drawerItems.forEach { item ->
+                    NavigationDrawerItem(
+                        icon = {
+                            Icon(
+                                imageVector = item.icon,
+                                contentDescription = item.label
+                            )
+                        },
+                        label = { Text(item.label) },
+                        selected = false,
+                        onClick = {
+                            scope.launch { drawerState.close() }
+                        }
+                    )
+                }
+            }
+
+        }
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(30.dp, 50.dp),
-            verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.Start
-        ) {
-            Text(
-                text = "Active users:",
-                fontSize = 30.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = CourgetteFontFamily,
-                color = Alternativo
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            topBar = {
+                AppTopBar(
+                    titulo = "Users",
+                    mostrarMenu = true,
+                    mostrarCorazon = true,
+                    mostrarLupa = true,
+                    mostrarDesplegable = false,
+                    onMenuClick = {
+                        scope.launch {
+                            if (drawerState.isClosed) {
+                                drawerState.open()
+                            } else {
+                                drawerState.close()
+                            }
+                        }
+                    },
+                    onTypesClick = {
+                        val intent =
+                            Intent(context, PlayActivity::class.java)
+                        context.startActivity(intent)
+                    },
+                    onShareClick = { }
+                )
+            }
+        ) { innerPadding ->
+            Surface(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                color = MaterialTheme.colorScheme.background
             ) {
-                items(listaUsuarios()) { Usuario ->
-                    UserCard(
-                        icono = Usuario.imagen,
-                        nombre = Usuario.nombre,
-                        puntos = Usuario.puntos
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(30.dp, 30.dp),
+                    verticalArrangement = Arrangement.Top,
+                    horizontalAlignment = Alignment.Start
+                ) {
+                    Text(
+                        text = "Active users:",
+                        fontSize = 30.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = CourgetteFontFamily,
+                        color = Alternativo
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Toast.makeText(
-                            context,
-                            "El usuario ${Usuario.nombre} tiene ${Usuario.puntos} puntos!!",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        items(listaUsuarios()) { Usuario ->
+                            UserCard(
+                                icono = Usuario.imagen,
+                                nombre = Usuario.nombre,
+                                puntos = Usuario.puntos
+                            ) {
+                                Toast.makeText(
+                                    context,
+                                    "El usuario ${Usuario.nombre} tiene ${Usuario.puntos} puntos!!",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
                     }
                 }
             }
         }
-        }
+    }
 }
 
 @Composable
